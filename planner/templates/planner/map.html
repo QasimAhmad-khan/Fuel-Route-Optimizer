@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fuel Route Planner</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    :root { font-family: system-ui, sans-serif; color: #183047; background: #f6f8fa; }
+    body { margin: 0; }
+    header { padding: 1.2rem max(1rem, calc((100vw - 1100px)/2)); background: #173f59; color: white; }
+    header h1 { margin: 0; font-size: 1.5rem; }
+    header p { margin: .35rem 0 0; color: #d5e8ee; }
+    main { max-width: 1100px; margin: 1.3rem auto; padding: 0 1rem; }
+    form { display: flex; flex-wrap: wrap; gap: .7rem; align-items: end; margin-bottom: 1rem; }
+    label { display: grid; gap: .25rem; flex: 1 1 220px; font-size: .85rem; font-weight: 650; }
+    input { padding: .7rem; border: 1px solid #b7c5cd; border-radius: 6px; font: inherit; }
+    button { padding: .74rem 1.1rem; border: 0; border-radius: 6px; background: #087e79; color: white; font: inherit; font-weight: 650; cursor: pointer; }
+    button:disabled { opacity: .55; cursor: wait; }
+    #status { min-height: 1.3rem; margin: .5rem 0; }
+    #map { height: min(66vh, 620px); min-height: 360px; border: 1px solid #cfdae0; border-radius: 8px; }
+    #summary { padding: .7rem 0; font-weight: 650; }
+    #stops { padding-left: 1.5rem; }
+    #stops li { margin: .35rem 0; }
+    .note { color: #50616f; font-size: .9rem; }
+  </style>
+</head>
+<body>
+  <header><h1>Fuel Route Planner</h1><p>500-mile range · 10 mpg · cost-aware stops</p></header>
+  <main>
+    <form id="route-form">
+      <label>Start in the USA<input id="start" value="Dallas, TX" required></label>
+      <label>Finish in the USA<input id="finish" value="Denver, CO" required></label>
+      <label>Starting fuel, gallons<input id="fuel" type="number" min="0" max="50" step="0.1" value="50" required></label>
+      <button id="submit" type="submit">Plan route</button>
+    </form>
+    <div id="status" role="status"></div>
+    <div id="map" aria-label="Map of the planned route and fuel stops"></div>
+    <div id="summary"></div>
+    <ol id="stops"></ol>
+    <p class="note">Fuel already in the tank is excluded from trip spending. Stations without supplied coordinates are plotted at city centers; verify the precise exit before driving.</p>
+  </main>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map').setView([39.2, -98.5], 4);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
+    }).addTo(map);
+    let activeLayer;
+    document.getElementById('route-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const button = document.getElementById('submit');
+      const status = document.getElementById('status');
+      button.disabled = true;
+      status.textContent = 'Planning route…';
+      try {
+        const response = await fetch('/api/v1/plan/', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({start: document.getElementById('start').value,
+            finish: document.getElementById('finish').value,
+            starting_fuel_gallons: Number(document.getElementById('fuel').value)})
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Planning failed.');
+        if (activeLayer) map.removeLayer(activeLayer);
+        activeLayer = L.geoJSON(data.map_geojson, {
+          style: () => ({color: '#087e79', weight: 5}),
+          pointToLayer: (feature, latlng) => L.circleMarker(latlng, {radius: 8, color: '#a83f26', fillColor: '#e76f51', fillOpacity: 1}),
+          onEachFeature: (feature, layer) => {
+            if (feature.properties.kind === 'fuel_stop') {
+              const popup = document.createElement('div');
+              popup.textContent = `Station ${feature.properties.station_id} · $${feature.properties.price_per_gallon_usd}/gal`;
+              layer.bindPopup(popup);
+            }
+          }
+        }).addTo(map);
+        map.fitBounds(activeLayer.getBounds(), {padding: [30, 30]});
+        document.getElementById('summary').textContent = `${data.distance_miles} miles · ${data.fuel_consumed_gallons} gallons consumed · $${data.total_money_spent_on_fuel_usd} purchased at ${data.fuel_stops.length} stops`;
+        const list = document.getElementById('stops');
+        list.replaceChildren();
+        data.fuel_stops.forEach(stop => {
+          const item = document.createElement('li');
+          item.textContent = `${stop.name}, ${stop.city}, ${stop.state} · mile ${stop.mile_marker} · ${stop.gallons} gal at $${stop.price_per_gallon_usd}/gal · $${stop.cost_usd}`;
+          list.appendChild(item);
+        });
+        status.textContent = `Ready in ${data.elapsed_ms} ms`;
+      } catch (error) {
+        status.textContent = error.message;
+      } finally {
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

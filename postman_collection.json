@@ -1,0 +1,42 @@
+{
+  "info": {
+    "name": "Fuel Route API Assessment",
+    "description": "Health and US fuel-route planning requests. Set base_url if your local server uses another port.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [{"key": "base_url", "value": "http://127.0.0.1:8000"}],
+  "item": [
+    {
+      "name": "Health",
+      "request": {"method": "GET", "url": "{{base_url}}/health/"},
+      "event": [{"listen": "test", "script": {"exec": ["pm.test('Healthy and fuel data imported', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().fuel_station_count).to.be.above(0); });"]}}]
+    },
+    {
+      "name": "Dallas to Denver",
+      "request": {
+        "method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\"start\":\"Dallas, TX\",\"finish\":\"Denver, CO\",\"starting_fuel_gallons\":50}"},
+        "url": "{{base_url}}/api/v1/plan/"
+      },
+      "event": [{"listen": "test", "script": {"exec": ["pm.test('Route, map, and cost returned', function () { pm.response.to.have.status(200); const data = pm.response.json(); pm.expect(data.distance_miles).to.be.above(0); pm.expect(data.map_geojson.type).to.eql('FeatureCollection'); pm.expect(data.fuel_stops).to.be.an('array'); pm.expect(data.total_money_spent_on_fuel_usd).to.be.a('string'); });"]}}]
+    },
+    {
+      "name": "Los Angeles to New York (multiple stops)",
+      "request": {
+        "method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\"start\":\"Los Angeles, CA\",\"finish\":\"New York, NY\"}"},
+        "url": "{{base_url}}/api/v1/plan/"
+      },
+      "event": [{"listen": "test", "script": {"exec": ["pm.test('Long route has multiple fuel purchases', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().fuel_stops.length).to.be.above(1); });"]}}]
+    },
+    {
+      "name": "Invalid identical locations",
+      "request": {
+        "method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\"start\":\"Dallas, TX\",\"finish\":\"Dallas, TX\"}"},
+        "url": "{{base_url}}/api/v1/plan/"
+      },
+      "event": [{"listen": "test", "script": {"exec": ["pm.test('Invalid route rejected', function () { pm.response.to.have.status(400); });"]}}]
+    }
+  ]
+}
