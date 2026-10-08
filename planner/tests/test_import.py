@@ -42,3 +42,13 @@ class ImportTests(TestCase):
             call_command("import_fuel_prices", path, stdout=io.StringIO())
         self.assertEqual(FuelStation.objects.count(), 1)
         self.assertEqual(str(FuelStation.objects.get().price_per_gallon), "3.26900000")
+
+    def test_canadian_row_is_excluded_even_if_it_has_coordinates(self):
+        content = ("OPIS Truckstop ID,Truckstop Name,Address,City,State,Rack ID,Retail Price,Latitude,Longitude\n"
+                   "1,US STOP,Road,Seattle,WA,1,3.10,47.61,-122.33\n"
+                   "2,CANADA STOP,Road,Vancouver,BC,1,2.10,49.28,-123.12\n")
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "prices.csv"
+            path.write_text(content, encoding="utf-8")
+            call_command("import_fuel_prices", path, stdout=io.StringIO())
+        self.assertEqual(list(FuelStation.objects.values_list("source_id", flat=True)), ["1"])
