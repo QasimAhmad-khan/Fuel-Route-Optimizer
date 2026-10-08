@@ -28,7 +28,7 @@ class PlanApiTests(TestCase):
         body = response.json()
         self.assertEqual(body["total_money_spent_on_fuel_usd"], "160.00")
         self.assertEqual([stop["station_id"] for stop in body["fuel_stops"]], ["a", "b"])
-        self.assertEqual(len(body["map_geojson"]["features"]), 3)
+        self.assertEqual(len(body["map_geojson"]["features"]), 5)
         self.assertEqual(geocode.call_count, 2)
         routing.assert_called_once()
 

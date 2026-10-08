@@ -66,11 +66,19 @@
         if (activeLayer) map.removeLayer(activeLayer);
         activeLayer = L.geoJSON(data.map_geojson, {
           style: () => ({color: '#087e79', weight: 5}),
-          pointToLayer: (feature, latlng) => L.circleMarker(latlng, {radius: 8, color: '#a83f26', fillColor: '#e76f51', fillOpacity: 1}),
+          pointToLayer: (feature, latlng) => {
+            const colors = {start: '#228356', finish: '#173f59', fuel_stop: '#e76f51'};
+            const color = colors[feature.properties.kind] || '#e76f51';
+            return L.circleMarker(latlng, {radius: 8, color, fillColor: color, fillOpacity: 1});
+          },
           onEachFeature: (feature, layer) => {
             if (feature.properties.kind === 'fuel_stop') {
               const popup = document.createElement('div');
               popup.textContent = `Station ${feature.properties.station_id} · $${feature.properties.price_per_gallon_usd}/gal`;
+              layer.bindPopup(popup);
+            } else if (feature.properties.kind === 'start' || feature.properties.kind === 'finish') {
+              const popup = document.createElement('div');
+              popup.textContent = `${feature.properties.kind}: ${feature.properties.label}`;
               layer.bindPopup(popup);
             }
           }

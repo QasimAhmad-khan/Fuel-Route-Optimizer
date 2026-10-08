@@ -36,7 +36,7 @@ Content-Type: application/json
 
 `start` and `finish` are geocoded within the US. `starting_fuel_gallons` is optional and defaults to 50 (a full tank). The tank capacity is 50 gallons because the maximum range is 500 miles at 10 mpg. The result includes:
 
-- `map_geojson`: a GeoJSON FeatureCollection with the full route LineString and fuel-stop Points.
+- `map_geojson`: a GeoJSON FeatureCollection with the full route LineString, start/finish Points, and fuel-stop Points.
 - `fuel_stops`: station, address, city/state, route mile, price, gallons, and purchase cost.
 - `total_money_spent_on_fuel_usd`: the sum of purchases made **during** this trip, rounded to cents. Fuel already in the tank is treated as prepaid. A journey shorter than 500 miles with a full tank may have zero trip purchases.
 - `fuel_consumed_gallons`: route miles / 10, whether or not those gallons were bought during this trip.

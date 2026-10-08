@@ -88,6 +88,9 @@ def plan_route(request):
 
     features = [{"type": "Feature", "properties": {"kind": "route"},
                  "geometry": {"type": "LineString", "coordinates": geometry}}]
+    for kind, location in (("start", origin), ("finish", destination)):
+        features.append({"type": "Feature", "properties": {"kind": kind, "label": location["label"]},
+                         "geometry": {"type": "Point", "coordinates": location["coordinates"]}})
     for stop in plan["fuel_stops"]:
         features.append({"type": "Feature", "properties": {"kind": "fuel_stop", "station_id": stop["station_id"],
                          "price_per_gallon_usd": stop["price_per_gallon_usd"]},
