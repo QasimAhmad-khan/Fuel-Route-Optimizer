@@ -57,4 +57,6 @@ class PlanApiTests(TestCase):
         response = self.client.get("/map/")
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "leaflet@1.9.4")
+        self.assertContains(response, "basemap.nationalmap.gov")
+        self.assertNotContains(response, "tile.openstreetmap.org")
         self.assertContains(response, "/api/v1/plan/")

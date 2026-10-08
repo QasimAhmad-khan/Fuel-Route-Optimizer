@@ -61,7 +61,7 @@ The file contains no station latitude/longitude. Import therefore uses **city ce
 
 The route uses ORS's generic driving-car profile because this assessment does not define truck dimensions. The route request avoids country borders. ORS's [public API restrictions](https://openrouteservice.org/restrictions/) include a 6,000 km maximum driving route distance.
 
-The one-time city dataset comes from [GeoNames](https://www.geonames.org/) under CC BY 4.0. Map data and browser tiles come from [OpenStreetMap](https://www.openstreetmap.org/copyright), with attribution shown on the map. The browser demo uses [Leaflet](https://leafletjs.com/).
+The one-time city dataset comes from [GeoNames](https://www.geonames.org/) under CC BY 4.0. ORS routing uses OpenStreetMap data. The browser demo uses the public-domain [USGS The National Map](https://www.usgs.gov/faqs/what-are-terms-uselicensing-map-services-and-data-national-map) basemap through [Leaflet](https://leafletjs.com/), with USGS attribution shown on the map.
 
 ## Tests and demo
 
