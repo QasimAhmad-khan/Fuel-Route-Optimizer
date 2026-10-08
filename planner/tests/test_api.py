@@ -41,6 +41,13 @@ class PlanApiTests(TestCase):
                                     content_type="application/json")
         self.assertEqual(response.status_code, 400)
 
+    @patch("planner.views.geocode_us")
+    def test_distinct_labels_resolving_to_same_place_are_rejected(self, geocode):
+        geocode.return_value = {"label": "Dallas, TX", "coordinates": [-96.8, 32.8]}
+        response = self.client.post("/api/v1/plan/", data=json.dumps({"start": "Dallas", "finish": "Dallas, TX"}),
+                                    content_type="application/json")
+        self.assertEqual(response.status_code, 400)
+
     def test_health_reports_imported_data(self):
         response = self.client.get("/health/")
         self.assertEqual(response.status_code, 200)

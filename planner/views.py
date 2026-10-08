@@ -61,6 +61,8 @@ def plan_route(request):
     try:
         origin = geocode_us(start)
         destination = geocode_us(finish)
+        if origin["coordinates"] == destination["coordinates"]:
+            return _bad_request("start and finish resolve to the same place.", 400)
         route = directions(origin, destination)
     except LocationError as exc:
         return _bad_request(str(exc), 422)
